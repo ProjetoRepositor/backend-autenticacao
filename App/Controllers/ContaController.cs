@@ -23,12 +23,16 @@ public class ContaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CriarConta([FromBody] CriarContaRequest request)
     {
+        #region Normalização de dados
         request.Nome = request.Nome.Trim();
         request.CPF = request.CPF.Trim();
         request.Email = request.Email.Trim();
+        #endregion
+        
+        #region Validações
         
         _logger.LogInformation($"Requisição recebida, tentando criar conta para o CPF {request.CPF} com o email {request.Email}");
-
+        
         if (!Metodos.ValidaEmail(request.Email))
         {
             _logger.LogError($"Email {request.Email} inválido");
@@ -58,7 +62,6 @@ public class ContaController : ControllerBase
             _logger.LogError("Você precisa ter 18 anos ou mais para utilizar o aplicativo");
             return ValidationProblem("Você precisa ter 18 anos ou mais para utilizar o aplicativo");
         }
-        
         
         _logger.LogDebug("Conectando ao banco de dados");
         
@@ -107,8 +110,12 @@ public class ContaController : ControllerBase
             return Conflict("Email já está em uso");
         }
         
+        #endregion
+        
+        #region Inserção
+        
         _logger.LogInformation("Inserindo Informações");
-
+        
         try
         {
             await contexto.login.AddAsync(login);
@@ -120,19 +127,25 @@ public class ContaController : ControllerBase
             _logger.LogCritical($"Ocorreu um erro ao inserir as informações: {e.Message}");
             return Problem($"Ocorreu um erro ao inserir as informações: {e.Message}");
         }
+        
+        #endregion
+        
+        #region Monta Resposta
 
-        var response = new
+        var resposta = new
         {
-            usuario.Nome,
-            usuario.CPF,
-            usuario.DataNascimento,
-            login.Email,
+            request.Nome,
+            request.CPF,
+            request.DataNascimento,
+            request.Email,
             Sexo = descricaoSexo,
         };
         
         _logger.LogInformation($"A conta para o CPF {request.CPF} com o email {request.Email} foi criada com sucesso");
+        
+        #endregion
 
-        return Ok(response);
+        return Ok(resposta);
     }
 
     [HttpGet("{id}", Name = "BuscarDetalhesPorId")]
