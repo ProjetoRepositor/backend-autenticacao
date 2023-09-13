@@ -17,7 +17,9 @@ public class Contexto : DbContext
 
     private static readonly string ConnectionString = $"Host={DbUrl}; Database={DbNome}; Username={DbUsuario}; Password={DbSenha};";
 
-    public DbSet<Example> example { get; set; }
+    public DbSet<Usuario> usuario { get; set; }
+    public DbSet<Sexo> sexo { get; set; }
+    public DbSet<Login> login { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -28,11 +30,20 @@ public class Contexto : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Example>().Property(b => b.Id).HasColumnName("id").IsRequired().UseIdentityColumn();
-        modelBuilder.Entity<Example>().Property(b => b.Palavra).HasColumnName("palavra");
-        modelBuilder.Entity<Example>().Property(b => b.Inteiro).HasColumnName("inteiro");
-        modelBuilder.Entity<Example>().Property(b => b.Flutuante).HasColumnName("flutuante");
-        modelBuilder.Entity<Example>().Property(b => b.DiaMesAno).HasColumnName("dia_mes_ano");
+        modelBuilder.Entity<Usuario>().Property(b => b.Id).HasColumnName("id").IsRequired().UseIdentityColumn();
+        modelBuilder.Entity<Usuario>().Property(b => b.Nome).HasColumnName("nome").IsRequired();
+        modelBuilder.Entity<Usuario>().Property(b => b.CPF).HasColumnName("cpf").IsRequired();
+        modelBuilder.Entity<Usuario>().Property(b => b.IdSexo).HasColumnName("fk_idsexo").IsRequired();
+        modelBuilder.Entity<Usuario>().Property(b => b.DataNascimento).HasColumnName("datanascimento").IsRequired();
+
+        modelBuilder.Entity<Sexo>().Property(b => b.Id).HasColumnName("id").IsRequired().UseIdentityColumn();
+        modelBuilder.Entity<Sexo>().Property(b => b.Descricao).HasColumnName("descricao").IsRequired();
+
+        modelBuilder.Entity<Login>().Property(b => b.Id).HasColumnName("id").IsRequired().UseIdentityColumn();
+        modelBuilder.Entity<Login>().Property(b => b.Email).HasColumnName("email").IsRequired();
+        modelBuilder.Entity<Login>().Property(b => b.Senha).HasColumnName("senha").IsRequired();
+        modelBuilder.Entity<Login>().Property(b => b.CodigoAutenticacao).HasColumnName("codigoautenticacao").IsRequired();
+        modelBuilder.Entity<Login>().Property(b => b.IdUsuario).HasColumnName("fk_idusuario").IsRequired();
     }
 
 }
