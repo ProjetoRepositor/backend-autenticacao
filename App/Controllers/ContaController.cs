@@ -17,7 +17,7 @@ public class ContaController : ControllerBase
         _logger = logger;
     }
 
-    [HttpPost(Name = "CriarConta")]
+    [HttpPost("Criar", Name = "CriarConta")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -148,8 +148,78 @@ public class ContaController : ControllerBase
         return Ok(resposta);
     }
 
+    [HttpPost("Login", Name = "Login")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    {
+        #region Normalização dos dados
+
+        request.Email = request.Email.Trim();
+
+        #endregion
+        
+        #region Validações
+        
+        _logger.LogInformation($"Tentando login para email {request.Email}");
+        
+        await using var contexto = new Contexto();
+        
+        var login = await contexto.login.Where(l => l.Email == request.Email && l.Senha == Metodos.HashSenha(request.Senha)).FirstOrDefaultAsync();
+        
+        if (login == null)
+        {
+            _logger.LogError($"Login falhou para o email {request.Email}");
+            return NotFound(new { mensagem = $"Login falhou para o email {request.Email}" });
+        }
+        
+        #endregion
+
+        #region Inserção
+        
+        var timestamp = DateTime.UtcNow.Ticks;
+
+        var hashSessao = Metodos.HashSenha($"{login.Id}:{timestamp}");
+
+        var sessao = new Sessao
+        {
+            HashSessao = hashSessao,
+            ManterLogin = request.ManterLogin,
+            UltimoAcesso = DateTime.UtcNow,
+            IdUsuario = login.IdUsuario,
+        };
+        
+        try
+        {
+            await contexto.sessao.AddAsync(sessao);
+
+            await contexto.SaveChangesAsync();
+        }
+        catch (Exception e)
+        {
+            _logger.LogCritical($"Ocorreu um erro ao inserir as informações: {e.Message}");
+            return Problem($"Ocorreu um erro ao inserir as informações: {e.Message}");
+        }
+        
+        #endregion
+
+        #region Monta Resposta
+
+        var resposta = new
+        {
+            sessao.HashSessao,
+            sessao.ManterLogin,
+            sessao.UltimoAcesso
+        };
+        
+        #endregion
+
+        return Created("", resposta);
+    }
+
     [HttpGet("{id}", Name = "BuscarDetalhesPorId")]
-    [ProducesResponseType(typeof(Usuario), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Get(int id)
     {

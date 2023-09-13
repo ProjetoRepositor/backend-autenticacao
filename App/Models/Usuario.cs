@@ -12,4 +12,5 @@ public class Usuario
     
     public Login Login { get; set; }
     public Sexo Sexo { get; set; }
+    public List<Sessao> Sessoes { get; set; }
 }

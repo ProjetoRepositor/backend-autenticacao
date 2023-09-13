@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 
 public class Contexto : DbContext
 {
+    #region Variáveis do banco de dados
+    
     // Get username and password from environment variable
     private static readonly string DbUsuario = 
         Environment.GetEnvironmentVariable("POSTGRES_USERNAME") ?? "postgres";
@@ -16,10 +18,17 @@ public class Contexto : DbContext
         Environment.GetEnvironmentVariable("DB_NAME") ?? "repositor";
 
     private static readonly string ConnectionString = $"Host={DbUrl}; Database={DbNome}; Username={DbUsuario}; Password={DbSenha};";
+    
+    #endregion
+
+    #region DbSets
 
     public DbSet<Usuario> usuario { get; set; }
     public DbSet<Sexo> sexo { get; set; }
     public DbSet<Login> login { get; set; }
+    public DbSet<Sessao> sessao { get; set; }
+    
+    #endregion
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -30,6 +39,8 @@ public class Contexto : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        #region Mapa de Propriedades e Coludas
+        
         modelBuilder.Entity<Usuario>().Property(b => b.Id).HasColumnName("id").IsRequired().UseIdentityColumn();
         modelBuilder.Entity<Usuario>().Property(b => b.Nome).HasColumnName("nome").IsRequired();
         modelBuilder.Entity<Usuario>().Property(b => b.CPF).HasColumnName("cpf").IsRequired();
@@ -42,10 +53,20 @@ public class Contexto : DbContext
         modelBuilder.Entity<Login>().Property(b => b.Id).HasColumnName("id").IsRequired().UseIdentityColumn();
         modelBuilder.Entity<Login>().Property(b => b.Email).HasColumnName("email").IsRequired();
         modelBuilder.Entity<Login>().Property(b => b.Senha).HasColumnName("senha").IsRequired();
-        modelBuilder.Entity<Login>().Property(b => b.CodigoAutenticacao).HasColumnName("codigoautenticacao").IsRequired();
+        modelBuilder.Entity<Login>().Property(b => b.CodigoAutenticacao).HasColumnName("codigoautenticacao");
         modelBuilder.Entity<Login>().Property(b => b.IdUsuario).HasColumnName("fk_idusuario").IsRequired();
+
+        modelBuilder.Entity<Sessao>().Property(s => s.Id).HasColumnName("id").IsRequired().UseIdentityColumn();
+        modelBuilder.Entity<Sessao>().Property(s => s.HashSessao).HasColumnName("hashsessao").IsRequired();
+        modelBuilder.Entity<Sessao>().Property(s => s.UltimoAcesso).HasColumnName("ultimoacesso").IsRequired();
+        modelBuilder.Entity<Sessao>().Property(s => s.ManterLogin).HasColumnName("manterlogin").IsRequired();
+        modelBuilder.Entity<Sessao>().Property(s => s.IdUsuario).HasColumnName("fk_idusuario").IsRequired();
         
-        // Definindo Relacionamentos
+        #endregion
+        
+        
+        #region Relacionamentos
+        
         modelBuilder.Entity<Usuario>()
             .HasOne(u => u.Sexo) 
             .WithMany(s => s.Usuarios)
@@ -53,10 +74,17 @@ public class Contexto : DbContext
             .IsRequired();
         
         modelBuilder.Entity<Login>()
-            .HasOne(l => l.Usuario) // Estabelece o relacionamento com a entidade Usuario
-            .WithOne(u => u.Login) // Define a propriedade de navegação inversa em Usuario (se necessário)
-            .HasForeignKey<Login>(l => l.IdUsuario) // Define a chave estrangeira na entidade Login
+            .HasOne(l => l.Usuario)
+            .WithOne(u => u.Login)
+            .HasForeignKey<Login>(l => l.IdUsuario)
             .IsRequired();
+
+        modelBuilder.Entity<Sessao>()
+            .HasOne(s => s.Usuario)
+            .WithMany(u => u.Sessoes)
+            .HasForeignKey(s => s.IdUsuario);
+
+        #endregion
     }
 
 }
