@@ -218,6 +218,58 @@ public class ContaController : ControllerBase
         return Created("", resposta);
     }
 
+    [HttpGet(Name = "BuscarUsuarioPorSessao")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> BuscaUsuarioPorSessao([FromHeader] string authorize)
+    {
+        #region Normalização dos dados
+
+        var token = authorize.Replace("Bearer ", "");
+
+        #endregion
+        
+        #region Validações
+        
+        await using var contexto = new Contexto();
+
+        var sessao = await contexto.sessao.Where(s => s.HashSessao == token).FirstOrDefaultAsync();
+
+        if (sessao == null)
+        {
+            return NotFound();
+        }
+        
+        _logger.LogInformation("Achou a sessao");
+        
+        #endregion
+        
+        #region Monta Resposta
+
+        var query = from usuario in contexto.usuario
+            join login in contexto.login
+                on usuario.Id equals login.IdUsuario
+            join sexo in contexto.sexo
+                on usuario.IdSexo equals sexo.Id
+            where usuario.Id == sessao.IdUsuario
+            select new
+            {
+                usuario.CPF,
+                usuario.Nome,
+                usuario.DataNascimento,
+                login.Email,
+                Sexo = sexo.Descricao,
+            };
+        
+
+        var resposta = await query.FirstOrDefaultAsync();
+        
+        #endregion
+        
+        return Ok(resposta);
+    }
+
     [HttpGet("{id}", Name = "BuscarDetalhesPorId")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
