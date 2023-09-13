@@ -65,12 +65,8 @@ public class ContaController : ControllerBase
         await using var contexto = new Contexto();
         
         _logger.LogInformation("Verificando se Sexo é válido");
-        
-        var descricaoSexoQuery = from sexo in contexto.sexo
-            where sexo.Id == request.IdSexo
-            select sexo.Descricao;
 
-        var descricaoSexo = await descricaoSexoQuery.FirstOrDefaultAsync();
+        var descricaoSexo = await contexto.sexo.Where(s => s.Id == request.IdSexo).FirstOrDefaultAsync();
 
         if (descricaoSexo == null)
         {
@@ -94,24 +90,16 @@ public class ContaController : ControllerBase
         };
         
         _logger.LogInformation($"Verificando se CPF ou Email já estão cadastrados");
-
-        var usuarioCheckQuery = from usuarioCheck in contexto.usuario
-            where usuario.CPF == usuarioCheck.CPF
-            select usuarioCheck;
-
-        var loginCheckQuery = from loginCheck in contexto.login
-            where login.Email == loginCheck.Email
-            select loginCheck;
         
-        var usuarioCheckEntity = await usuarioCheckQuery.FirstOrDefaultAsync();
+        var usuarioCheck = await contexto.usuario.Where(u => u.CPF == request.CPF).FirstOrDefaultAsync();
 
-        if (usuarioCheckEntity != null)
+        if (usuarioCheck != null)
         {
             _logger.LogInformation($"O CPF {request.CPF} já está cadastrado");
             return Conflict("CPF já está cadastrado");
         }
 
-        var loginCheckEntity = await loginCheckQuery.FirstOrDefaultAsync();
+        var loginCheckEntity = await contexto.login.Where(l => l.Email == request.Email).FirstOrDefaultAsync();
 
         if (loginCheckEntity != null)
         {
