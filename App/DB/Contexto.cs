@@ -33,8 +33,8 @@ public class Contexto : DbContext
         modelBuilder.Entity<Usuario>().Property(b => b.Id).HasColumnName("id").IsRequired().UseIdentityColumn();
         modelBuilder.Entity<Usuario>().Property(b => b.Nome).HasColumnName("nome").IsRequired();
         modelBuilder.Entity<Usuario>().Property(b => b.CPF).HasColumnName("cpf").IsRequired();
-        modelBuilder.Entity<Usuario>().Property(b => b.IdSexo).HasColumnName("fk_idsexo").IsRequired();
         modelBuilder.Entity<Usuario>().Property(b => b.DataNascimento).HasColumnName("datanascimento").IsRequired();
+        modelBuilder.Entity<Usuario>().Property(b => b.IdSexo).HasColumnName("fk_idsexo").IsRequired();
 
         modelBuilder.Entity<Sexo>().Property(b => b.Id).HasColumnName("id").IsRequired().UseIdentityColumn();
         modelBuilder.Entity<Sexo>().Property(b => b.Descricao).HasColumnName("descricao").IsRequired();
@@ -44,6 +44,18 @@ public class Contexto : DbContext
         modelBuilder.Entity<Login>().Property(b => b.Senha).HasColumnName("senha").IsRequired();
         modelBuilder.Entity<Login>().Property(b => b.CodigoAutenticacao).HasColumnName("codigoautenticacao").IsRequired();
         modelBuilder.Entity<Login>().Property(b => b.IdUsuario).HasColumnName("fk_idusuario").IsRequired();
+        
+        // Definindo Relacionamentos
+        modelBuilder.Entity<Usuario>()
+            .HasOne(u => u.Sexo) 
+            .WithMany(s => s.Usuarios)
+            .IsRequired();
+        
+        modelBuilder.Entity<Login>()
+            .HasOne(l => l.Usuario) // Estabelece o relacionamento com a entidade Usuario
+            .WithOne(u => u.Login) // Define a propriedade de navegação inversa em Usuario (se necessário)
+            .HasForeignKey<Login>(l => l.IdUsuario) // Define a chave estrangeira na entidade Login
+            .IsRequired();
     }
 
 }

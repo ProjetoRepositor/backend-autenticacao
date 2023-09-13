@@ -9,4 +9,7 @@ public class Usuario
     
     public DateOnly DataNascimento { get; set; }
     public int IdSexo { get; set; }
+    
+    public Login Login { get; set; }
+    public Sexo Sexo { get; set; }
 }
