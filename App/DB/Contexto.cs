@@ -49,6 +49,7 @@ public class Contexto : DbContext
         modelBuilder.Entity<Usuario>()
             .HasOne(u => u.Sexo) 
             .WithMany(s => s.Usuarios)
+            .HasForeignKey(u => u.IdSexo)
             .IsRequired();
         
         modelBuilder.Entity<Login>()

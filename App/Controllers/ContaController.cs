@@ -1,10 +1,9 @@
-using Microsoft.AspNetCore.Cryptography.KeyDerivation;
-
 namespace App.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
 using Models;
 using DB;
+using Services;
 using Microsoft.EntityFrameworkCore;
 
 [ApiController]
@@ -18,32 +17,66 @@ public class ContaController : ControllerBase
         _logger = logger;
     }
 
-    private static string HashSenha(string senha)
-    {
-        byte[] salt = { 5, 10, 15, 20, 25, 30, 35 };
-        
-        string hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
-            password: senha,
-            salt: salt,
-            prf: KeyDerivationPrf.HMACSHA256,
-            iterationCount: 100000,
-            numBytesRequested: 256 / 8));
-
-        return hashed;
-    }
-
     [HttpPost(Name = "CriarConta")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CriarConta([FromBody] CriarContaRequest request)
     {
+        request.Nome = request.Nome.Trim();
+        request.CPF = request.CPF.Trim();
+        request.Email = request.Email.Trim();
         
         _logger.LogInformation($"Requisição recebida, tentando criar conta para o CPF {request.CPF} com o email {request.Email}");
+
+        if (!Metodos.ValidaEmail(request.Email))
+        {
+            _logger.LogError($"Email {request.Email} inválido");
+            return ValidationProblem($"Email {request.Email} inválido");
+        }
+
+        if (!Metodos.ValidaSenha(request.Senha))
+        {
+            _logger.LogError("Senha inválida");
+            return ValidationProblem("Senha Inválida");
+        }
+
+        if (!Metodos.ValidaNome(request.Nome))
+        {
+            _logger.LogError($"Nome Inválido: {request.Nome}, é necessário informar o sobrenome");
+            return ValidationProblem($"Nome Inválido: {request.Nome}, é necessário informar o sobrenome");
+        }
+
+        if (!Metodos.ValidaCPF(request.CPF))
+        {
+            _logger.LogError($"CPF Inválido {request.CPF}");
+            return ValidationProblem($"CPF Inválido {request.CPF}");
+        }
+
+        if (!Metodos.ValidaIdade(request.DataNascimento))
+        {
+            _logger.LogError("Você precisa ter 18 anos ou mais para utilizar o aplicativo");
+            return ValidationProblem("Você precisa ter 18 anos ou mais para utilizar o aplicativo");
+        }
+        
         
         _logger.LogDebug("Conectando ao banco de dados");
         
         await using var contexto = new Contexto();
+        
+        _logger.LogInformation("Verificando se Sexo é válido");
+        
+        var descricaoSexoQuery = from sexo in contexto.sexo
+            where sexo.Id == request.IdSexo
+            select sexo.Descricao;
+
+        var descricaoSexo = await descricaoSexoQuery.FirstOrDefaultAsync();
+
+        if (descricaoSexo == null)
+        {
+            _logger.LogError($"Sexo com id: {request.IdSexo} não existe");
+            return ValidationProblem($"Sexo com id: {request.IdSexo} não existe");
+        }
 
         var usuario = new Usuario
         {
@@ -56,7 +89,7 @@ public class ContaController : ControllerBase
         var login = new Login
         {
             Email = request.Email,
-            Senha = HashSenha(request.Senha),
+            Senha = Metodos.HashSenha(request.Senha),
             Usuario = usuario
         };
         
@@ -97,13 +130,8 @@ public class ContaController : ControllerBase
         catch (Exception e)
         {
             _logger.LogCritical($"Ocorreu um erro ao inserir as informações: {e.Message}");
+            return Problem($"Ocorreu um erro ao inserir as informações: {e.Message}");
         }
-
-        var descricaoSexoQuery = from sexo in contexto.sexo
-            where sexo.Id == request.IdSexo
-            select sexo.Descricao;
-
-        var descricaoSexo = await descricaoSexoQuery.FirstOrDefaultAsync();
 
         var response = new
         {
@@ -113,6 +141,8 @@ public class ContaController : ControllerBase
             login.Email,
             Sexo = descricaoSexo,
         };
+        
+        _logger.LogInformation($"A conta para o CPF {request.CPF} com o email {request.Email} foi criada com sucesso");
 
         return Ok(response);
     }
