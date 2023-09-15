@@ -69,9 +69,9 @@ public class ContaController : ControllerBase
         
         _logger.LogInformation("Verificando se Sexo é válido");
 
-        var descricaoSexo = await contexto.sexo.Where(s => s.Id == request.IdSexo).FirstOrDefaultAsync();
+        var sexo = await contexto.sexo.Where(s => s.Id == request.IdSexo).FirstOrDefaultAsync();
 
-        if (descricaoSexo == null)
+        if (sexo == null)
         {
             _logger.LogError($"Sexo com id: {request.IdSexo} não existe");
             return ValidationProblem($"Sexo com id: {request.IdSexo} não existe");
@@ -138,7 +138,7 @@ public class ContaController : ControllerBase
             request.CPF,
             request.DataNascimento,
             request.Email,
-            Sexo = descricaoSexo,
+            Sexo = sexo.Descricao,
         };
         
         _logger.LogInformation($"A conta para o CPF {request.CPF} com o email {request.Email} foi criada com sucesso");
