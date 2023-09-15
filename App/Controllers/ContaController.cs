@@ -275,6 +275,8 @@ public class ContaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Get(int id)
     {
+        #region Monta Resposta
+        
         await using var contexto = new Contexto();
 
         var query = from usuario in contexto.usuario
@@ -292,11 +294,14 @@ public class ContaController : ControllerBase
             };
 
         var resultado = await query.FirstOrDefaultAsync();
+        
+        #endregion
 
         if (resultado == null)
         {
             return NotFound();
         }
+        
         return Ok(resultado);
     }
 }
