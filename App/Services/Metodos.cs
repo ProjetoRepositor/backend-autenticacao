@@ -29,7 +29,7 @@ public class Metodos
 
         var dominio = pattern.Split("@")[1];
 
-        var dominioValido = !Regex.IsMatch(dominio, pattern);
+        var dominioValido = !Regex.IsMatch(dominio, dominioPattern);
 
         return matchPattern && dominioValido;
     }
