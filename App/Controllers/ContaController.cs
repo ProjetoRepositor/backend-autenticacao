@@ -57,10 +57,10 @@ public class ContaController : ControllerBase
             return ValidationProblem($"CPF Inválido {request.CPF}");
         }
 
-        if (!Metodos.ValidaIdade(request.DataNascimento))
+        if (!Metodos.ValidaIdade(request.DataNascimento, out var idade))
         {
-            _logger.LogError("Você precisa ter 18 anos ou mais para utilizar o aplicativo");
-            return ValidationProblem("Você precisa ter 18 anos ou mais para utilizar o aplicativo");
+            _logger.LogError($"Usuário precisa ter 18 anos ou mais para utilizar o aplicativo, usuário tem {idade} anos");
+            return ValidationProblem($"Você precisa ter 18 anos ou mais para utilizar o aplicativo, sua idade: {idade}");
         }
         
         _logger.LogDebug("Conectando ao banco de dados");

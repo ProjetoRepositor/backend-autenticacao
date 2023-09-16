@@ -104,9 +104,14 @@ public class Metodos
 
     public static bool ValidaIdade(DateOnly dataNascimento)
     {
+        return ValidaIdade(dataNascimento, out _);
+    }
+
+    public static bool ValidaIdade(DateOnly dataNascimento, out int idade)
+    {
         var hoje = DateOnly.FromDateTime(DateTime.Today);
         
-        var idade = hoje.Year - dataNascimento.Year;
+        idade = hoje.Year - dataNascimento.Year;
 
         var naoPassouOMesDoAniversario = hoje.Month < dataNascimento.Month;
 
