@@ -1,6 +1,6 @@
 namespace App.DB;
 
-using App.Models;
+using Models;
 using Microsoft.EntityFrameworkCore;
 
 public class Contexto : DbContext
@@ -23,10 +23,10 @@ public class Contexto : DbContext
 
     #region DbSets
 
-    public DbSet<Usuario> usuario { get; set; }
-    public DbSet<Sexo> sexo { get; set; }
-    public DbSet<Login> login { get; set; }
-    public DbSet<Sessao> sessao { get; set; }
+    public DbSet<Usuario> Usuario { get; set; } = null!;
+    public DbSet<Sexo> Sexo { get; set; } = null!;
+    public DbSet<Login> Login { get; set; } = null!;
+    public DbSet<Sessao> Sessao { get; set; } = null!;
     
     #endregion
 
@@ -39,11 +39,20 @@ public class Contexto : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        #region Mapa de Tabelas
+
+        modelBuilder.Entity<Usuario>().ToTable("usuario");
+        modelBuilder.Entity<Login>().ToTable("login");
+        modelBuilder.Entity<Sexo>().ToTable("sexo");
+        modelBuilder.Entity<Sessao>().ToTable("sessao");
+
+        #endregion
+        
         #region Mapa de Propriedades e Coludas
         
         modelBuilder.Entity<Usuario>().Property(b => b.Id).HasColumnName("id").IsRequired().UseIdentityColumn();
         modelBuilder.Entity<Usuario>().Property(b => b.Nome).HasColumnName("nome").IsRequired();
-        modelBuilder.Entity<Usuario>().Property(b => b.CPF).HasColumnName("cpf").IsRequired();
+        modelBuilder.Entity<Usuario>().Property(b => b.Cpf).HasColumnName("cpf").IsRequired();
         modelBuilder.Entity<Usuario>().Property(b => b.DataNascimento).HasColumnName("datanascimento").IsRequired();
         modelBuilder.Entity<Usuario>().Property(b => b.IdSexo).HasColumnName("fk_idsexo").IsRequired();
 
@@ -63,7 +72,6 @@ public class Contexto : DbContext
         modelBuilder.Entity<Sessao>().Property(s => s.IdUsuario).HasColumnName("fk_idusuario").IsRequired();
         
         #endregion
-        
         
         #region Relacionamentos
         

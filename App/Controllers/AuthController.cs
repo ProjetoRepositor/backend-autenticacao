@@ -25,7 +25,7 @@ public class AuthController: ControllerBase
         
         await using var contexto = new Contexto();
 
-        var sessao = await contexto.sessao.Where(s => s.HashSessao == token).FirstOrDefaultAsync();
+        var sessao = await contexto.Sessao.Where(s => s.HashSessao == token).FirstOrDefaultAsync();
 
         if (
             sessao != null &&

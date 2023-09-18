@@ -25,13 +25,13 @@ public class ContaController : ControllerBase
     {
         #region Normalização de dados
         request.Nome = request.Nome.Trim();
-        request.CPF = request.CPF.Trim();
+        request.Cpf = request.Cpf.Trim();
         request.Email = request.Email.Trim();
         #endregion
         
         #region Validações
         
-        _logger.LogInformation($"Requisição recebida, tentando criar conta para o CPF {request.CPF} com o email {request.Email}");
+        _logger.LogInformation($"Requisição recebida, tentando criar conta para o CPF {request.Cpf} com o email {request.Email}");
         
         if (!Metodos.ValidaEmail(request.Email))
         {
@@ -51,10 +51,10 @@ public class ContaController : ControllerBase
             return ValidationProblem($"Nome Inválido: {request.Nome}, é necessário informar o sobrenome");
         }
 
-        if (!Metodos.ValidaCPF(request.CPF))
+        if (!Metodos.ValidaCpf(request.Cpf))
         {
-            _logger.LogError($"CPF Inválido {request.CPF}");
-            return ValidationProblem($"CPF Inválido {request.CPF}");
+            _logger.LogError($"CPF Inválido {request.Cpf}");
+            return ValidationProblem($"CPF Inválido {request.Cpf}");
         }
 
         if (!Metodos.ValidaIdade(request.DataNascimento, out var idade))
@@ -69,7 +69,7 @@ public class ContaController : ControllerBase
         
         _logger.LogInformation("Verificando se Sexo é válido");
 
-        var sexo = await contexto.sexo.Where(s => s.Id == request.IdSexo).FirstOrDefaultAsync();
+        var sexo = await contexto.Sexo.Where(s => s.Id == request.IdSexo).FirstOrDefaultAsync();
 
         if (sexo == null)
         {
@@ -81,7 +81,7 @@ public class ContaController : ControllerBase
         {
             Nome = request.Nome,
             DataNascimento = request.DataNascimento,
-            CPF = request.CPF,
+            Cpf = request.Cpf,
             IdSexo = request.IdSexo,
         };
         
@@ -94,15 +94,15 @@ public class ContaController : ControllerBase
         
         _logger.LogInformation($"Verificando se CPF ou Email já estão cadastrados");
         
-        var usuarioCheck = await contexto.usuario.Where(u => u.CPF == request.CPF).FirstOrDefaultAsync();
+        var usuarioCheck = await contexto.Usuario.Where(u => u.Cpf == request.Cpf).FirstOrDefaultAsync();
 
         if (usuarioCheck != null)
         {
-            _logger.LogInformation($"O CPF {request.CPF} já está cadastrado");
+            _logger.LogInformation($"O CPF {request.Cpf} já está cadastrado");
             return Conflict("CPF já está cadastrado");
         }
 
-        var loginCheckEntity = await contexto.login.Where(l => l.Email == request.Email).FirstOrDefaultAsync();
+        var loginCheckEntity = await contexto.Login.Where(l => l.Email == request.Email).FirstOrDefaultAsync();
 
         if (loginCheckEntity != null)
         {
@@ -118,7 +118,7 @@ public class ContaController : ControllerBase
         
         try
         {
-            await contexto.login.AddAsync(login);
+            await contexto.Login.AddAsync(login);
 
             await contexto.SaveChangesAsync();
         }
@@ -135,13 +135,13 @@ public class ContaController : ControllerBase
         var resposta = new
         {
             request.Nome,
-            request.CPF,
+            CPF = request.Cpf,
             request.DataNascimento,
             request.Email,
             Sexo = sexo.Descricao,
         };
         
-        _logger.LogInformation($"A conta para o CPF {request.CPF} com o email {request.Email} foi criada com sucesso");
+        _logger.LogInformation($"A conta para o CPF {request.Cpf} com o email {request.Email} foi criada com sucesso");
         
         #endregion
 
@@ -166,7 +166,7 @@ public class ContaController : ControllerBase
         
         await using var contexto = new Contexto();
         
-        var login = await contexto.login.Where(l => l.Email == request.Email && l.Senha == Metodos.HashSenha(request.Senha)).FirstOrDefaultAsync();
+        var login = await contexto.Login.Where(l => l.Email == request.Email && l.Senha == Metodos.HashSenha(request.Senha)).FirstOrDefaultAsync();
         
         if (login == null)
         {
@@ -192,7 +192,7 @@ public class ContaController : ControllerBase
         
         try
         {
-            await contexto.sessao.AddAsync(sessao);
+            await contexto.Sessao.AddAsync(sessao);
 
             await contexto.SaveChangesAsync();
         }
@@ -234,7 +234,7 @@ public class ContaController : ControllerBase
         
         await using var contexto = new Contexto();
 
-        var sessao = await contexto.sessao.Where(s => s.HashSessao == token).FirstOrDefaultAsync();
+        var sessao = await contexto.Sessao.Where(s => s.HashSessao == token).FirstOrDefaultAsync();
 
         if (sessao == null)
         {
@@ -247,15 +247,15 @@ public class ContaController : ControllerBase
         
         #region Monta Resposta
 
-        var query = from usuario in contexto.usuario
-            join login in contexto.login
+        var query = from usuario in contexto.Usuario
+            join login in contexto.Login
                 on usuario.Id equals login.IdUsuario
-            join sexo in contexto.sexo
+            join sexo in contexto.Sexo
                 on usuario.IdSexo equals sexo.Id
             where usuario.Id == sessao.IdUsuario
             select new
             {
-                usuario.CPF,
+                CPF = usuario.Cpf,
                 usuario.Nome,
                 usuario.DataNascimento,
                 login.Email,
@@ -279,16 +279,16 @@ public class ContaController : ControllerBase
         
         await using var contexto = new Contexto();
 
-        var query = from usuario in contexto.usuario
-            join sexo in contexto.sexo
+        var query = from usuario in contexto.Usuario
+            join sexo in contexto.Sexo
                 on usuario.IdSexo equals sexo.Id
-            join login in contexto.login
+            join login in contexto.Login
                 on usuario.Id equals login.IdUsuario
             select new
             {
                 usuario.Nome,
                 usuario.DataNascimento,
-                usuario.CPF,
+                CPF = usuario.Cpf,
                 sexo = sexo.Descricao,
                 login.Email,
             };

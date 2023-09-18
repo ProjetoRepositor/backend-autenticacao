@@ -49,7 +49,7 @@ public class Metodos
         return contemSobrenome && possuiTamanhoMinimo;
     }
 
-    public static bool ValidaCPF(string cpf)
+    public static bool ValidaCpf(string cpf)
     {
         if (cpf.Length != 11)
             return false;
