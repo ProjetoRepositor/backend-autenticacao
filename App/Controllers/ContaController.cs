@@ -279,21 +279,7 @@ public class ContaController : ControllerBase
         
         await using var contexto = new Contexto();
 
-        var query = from usuario in contexto.Usuario
-            join sexo in contexto.Sexo
-                on usuario.IdSexo equals sexo.Id
-            join login in contexto.Login
-                on usuario.Id equals login.IdUsuario
-            select new
-            {
-                usuario.Nome,
-                usuario.DataNascimento,
-                CPF = usuario.Cpf,
-                sexo = sexo.Descricao,
-                login.Email,
-            };
-
-        var resultado = await query.FirstOrDefaultAsync();
+        var resultado = await contexto.Conta.Where(c => c.Id == id).FirstOrDefaultAsync();
         
         #endregion
 

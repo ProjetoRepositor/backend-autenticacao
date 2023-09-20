@@ -27,6 +27,7 @@ public class Contexto : DbContext
     public DbSet<Sexo> Sexo { get; set; } = null!;
     public DbSet<Login> Login { get; set; } = null!;
     public DbSet<Sessao> Sessao { get; set; } = null!;
+    public DbSet<Conta> Conta { get; set; } = null!;
     
     #endregion
 
@@ -45,6 +46,7 @@ public class Contexto : DbContext
         modelBuilder.Entity<Login>().ToTable("login");
         modelBuilder.Entity<Sexo>().ToTable("sexo");
         modelBuilder.Entity<Sessao>().ToTable("sessao");
+        modelBuilder.Entity<Conta>().ToView("conta");
 
         #endregion
         
@@ -70,6 +72,13 @@ public class Contexto : DbContext
         modelBuilder.Entity<Sessao>().Property(s => s.UltimoAcesso).HasColumnName("ultimoacesso").IsRequired();
         modelBuilder.Entity<Sessao>().Property(s => s.ManterLogin).HasColumnName("manterlogin").IsRequired();
         modelBuilder.Entity<Sessao>().Property(s => s.IdUsuario).HasColumnName("fk_idusuario").IsRequired();
+
+        modelBuilder.Entity<Conta>().Property(c => c.Id).HasColumnName("id");
+        modelBuilder.Entity<Conta>().Property(c => c.Nome).HasColumnName("nome");
+        modelBuilder.Entity<Conta>().Property(c => c.Cpf).HasColumnName("cpf");
+        modelBuilder.Entity<Conta>().Property(c => c.DataNascimento).HasColumnName("datanascimento");
+        modelBuilder.Entity<Conta>().Property(c => c.Email).HasColumnName("email");
+        modelBuilder.Entity<Conta>().Property(c => c.Sexo).HasColumnName("sexo");
         
         #endregion
         
