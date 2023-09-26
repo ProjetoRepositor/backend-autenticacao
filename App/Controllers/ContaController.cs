@@ -148,6 +148,100 @@ public class ContaController : ControllerBase
         return Ok(resposta);
     }
 
+    [HttpPut("{id}", Name = "AlterarConta")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> AlterarConta(int id, [FromBody] AtualizarContaRequest request)
+    {
+        #region Normalização de dados
+
+        request.Cpf = request.Cpf.Trim();
+        request.Nome = request.Nome.Trim();
+        request.Email = request.Email.Trim();
+
+        #endregion
+
+        #region Validações
+
+        _logger.LogInformation($"Requisição recebida, tentando criar conta para o CPF {request.Cpf} com o email {request.Email}");
+        
+        if (!Metodos.ValidaEmail(request.Email))
+        {
+            _logger.LogError($"Email {request.Email} inválido");
+            return ValidationProblem($"Email {request.Email} inválido");
+        }
+
+        if (!Metodos.ValidaNome(request.Nome))
+        {
+            _logger.LogError($"Nome Inválido: {request.Nome}, é necessário informar o sobrenome");
+            return ValidationProblem($"Nome Inválido: {request.Nome}, é necessário informar o sobrenome");
+        }
+
+        if (!Metodos.ValidaCpf(request.Cpf))
+        {
+            _logger.LogError($"CPF Inválido {request.Cpf}");
+            return ValidationProblem($"CPF Inválido {request.Cpf}");
+        }
+        
+        if (!Metodos.ValidaIdade(request.DataNascimento, out var idade))
+        {
+            _logger.LogError($"Usuário precisa ter 18 anos ou mais para utilizar o aplicativo, usuário tem {idade} anos");
+            return ValidationProblem($"Você precisa ter 18 anos ou mais para utilizar o aplicativo, sua idade: {idade}");
+        }
+        
+        await using var contexto = new Contexto();
+        
+        _logger.LogInformation("Verificando se Sexo é válido");
+
+        var sexo = await contexto.Sexo.Where(s => s.Id == request.IdSexo).FirstOrDefaultAsync();
+
+        if (sexo == null)
+        {
+            _logger.LogError($"Sexo com id: {request.IdSexo} não existe");
+            return ValidationProblem($"Sexo com id: {request.IdSexo} não existe");
+        }
+
+        #endregion
+
+        #region Atualizando dados
+        
+        _logger.LogInformation("Atualizando informações no banco");
+
+        try
+        {
+            var usuario = await contexto.Usuario.FindAsync(id);
+
+            if (usuario == null)
+            {
+                _logger.LogError("Usuário não encontrado");
+                return NotFound();
+            }
+            
+            usuario.Nome = request.Nome;
+            usuario.DataNascimento = request.DataNascimento;
+            usuario.IdSexo = request.IdSexo;
+            usuario.Cpf = request.Cpf;
+
+            var login = await contexto.Login.Where(l => l.IdUsuario == id).FirstOrDefaultAsync();
+            login!.Email = request.Email;
+
+            await contexto.SaveChangesAsync();
+        }
+        catch (Exception e)
+        {
+            _logger.LogCritical($"Ocorreu um erro ao realizar o update no banco de dados: {e.Message}");
+            return Problem($"Ocorreu um erro ao realizar o update no banco de dados: {e.Message}");
+        }
+        
+        _logger.LogInformation($"Dados atualizados para o id: {id}");
+
+        #endregion
+
+        return Ok();
+    }
+    
+    
     [HttpPost("Login", Name = "Login")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
