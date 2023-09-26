@@ -148,7 +148,7 @@ public class ContaController : ControllerBase
         return Ok(resposta);
     }
 
-    [HttpPut("{id}", Name = "AlterarConta")]
+    [HttpPut("{id:int}", Name = "AlterarConta")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -238,6 +238,49 @@ public class ContaController : ControllerBase
 
         #endregion
 
+        return Ok();
+    }
+
+    [HttpPut("Senha/{id:int}", Name = "AlterarSenha")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> AlterarSenha(int id, [FromBody] AlterarSenhaRequest request)
+    {
+        _logger.LogInformation($"Tentando atualizar senha do usuário {id}");
+        
+        #region Validando senha
+
+        if (!Metodos.ValidaSenha(request.Senha))
+        {
+            _logger.LogError($"Senha inválida para o usuário {id}");
+        }
+
+        #endregion
+        
+        #region Buscando Dados
+
+        await using var contexto = new Contexto();
+
+        var login = await contexto.Login.Where(l => l.IdUsuario == id).FirstOrDefaultAsync();
+
+        if (login == null)
+        {
+            _logger.LogError($"Usuário {id} não encontrado");
+            return Problem($"Usuário {id} não encontrado");
+        }
+        
+        #endregion
+
+        #region Atualizando Senha
+
+        login.Senha = Metodos.HashSenha(request.Senha);
+
+        await contexto.SaveChangesAsync();
+
+        #endregion
+        
         return Ok();
     }
     
@@ -364,7 +407,7 @@ public class ContaController : ControllerBase
         return Ok(resposta);
     }
 
-    [HttpGet("{id}", Name = "BuscarDetalhesPorId")]
+    [HttpGet("{id:int}", Name = "BuscarDetalhesPorId")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Get(int id)
