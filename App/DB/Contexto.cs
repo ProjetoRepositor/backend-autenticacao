@@ -80,6 +80,7 @@ public class Contexto : DbContext
         modelBuilder.Entity<Conta>().Property(c => c.DataNascimento).HasColumnName("datanascimento");
         modelBuilder.Entity<Conta>().Property(c => c.Email).HasColumnName("email");
         modelBuilder.Entity<Conta>().Property(c => c.Sexo).HasColumnName("sexo");
+        modelBuilder.Entity<Conta>().Property(c => c.Ativo).HasColumnName("ativo");
         
         #endregion
         
