@@ -65,6 +65,7 @@ public class Contexto : DbContext
         modelBuilder.Entity<Login>().Property(b => b.Email).HasColumnName("email").IsRequired();
         modelBuilder.Entity<Login>().Property(b => b.Senha).HasColumnName("senha").IsRequired();
         modelBuilder.Entity<Login>().Property(b => b.CodigoAutenticacao).HasColumnName("codigoautenticacao");
+        modelBuilder.Entity<Login>().Property(b => b.Ativo).HasColumnName("ativo");
         modelBuilder.Entity<Login>().Property(b => b.IdUsuario).HasColumnName("fk_idusuario").IsRequired();
 
         modelBuilder.Entity<Sessao>().Property(s => s.Id).HasColumnName("id").IsRequired().UseIdentityColumn();

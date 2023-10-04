@@ -7,6 +7,7 @@ public class Login
     public string Senha { get; set; } = string.Empty;
     public string? CodigoAutenticacao { get; set; }
     public int IdUsuario { get; set; }
+    public bool Ativo { get; set; }
 
     public Usuario Usuario { get; set; } = null!;
 }

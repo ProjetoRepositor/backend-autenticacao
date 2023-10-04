@@ -303,7 +303,10 @@ public class ContaController : ControllerBase
         
         await using var contexto = new Contexto();
         
-        var login = await contexto.Login.Where(l => l.Email == request.Email && l.Senha == Metodos.HashSenha(request.Senha)).FirstOrDefaultAsync();
+        var login = await contexto.Login.Where(
+            l => l.Email == request.Email &&
+                 l.Senha == Metodos.HashSenha(request.Senha) &&
+                 l.Ativo).FirstOrDefaultAsync();
         
         if (login == null)
         {
@@ -410,21 +413,75 @@ public class ContaController : ControllerBase
     [HttpGet("{id:int}", Name = "BuscarDetalhesPorId")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Get(int id)
+    public async Task<IActionResult> BuscarUsuarioPorId(int id)
     {
         #region Monta Resposta
-        
+
         await using var contexto = new Contexto();
 
         var resultado = await contexto.Conta.Where(c => c.Id == id).FirstOrDefaultAsync();
-        
+
         #endregion
 
         if (resultado == null)
         {
             return NotFound();
         }
-        
+
         return Ok(resultado);
+    }
+
+    [HttpDelete(Name = "DesativarConta")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> DesativarConta([FromHeader] string authorize)
+    {
+        #region Busca Conta
+        
+        _logger.LogInformation($"Tentando desativar conta vinculada à sessão: {authorize}");
+
+        var token = authorize.Replace("Bearer ", "");
+        
+        await using var contexto = new Contexto();
+
+        var sessao = await contexto.Sessao.Where(s => s.HashSessao == token).FirstOrDefaultAsync();
+
+        if (sessao == null)
+        {
+            _logger.LogError($"Sessão {authorize} não encontrada");
+            return NotFound();
+        }
+        
+        _logger.LogInformation("Achou a sessao");
+        
+        #endregion
+
+        #region Desativando Conta
+
+        var loginQuery = contexto.Login.Where(l => l.IdUsuario == sessao.IdUsuario);
+
+        var login = await loginQuery.FirstOrDefaultAsync();
+
+        if (login == null)
+        {
+            _logger.LogCritical($"Existe uma sessão sem usuário ou login, verifique o banco de dados urgentemente, sessão: {sessao.HashSessao}");
+            return Problem();
+        }
+
+        if (!login.Ativo)
+        {
+            _logger.LogError($"Usuário com sessão {sessao.HashSessao} já está desativado");
+            return BadRequest();
+        }
+
+        login.Ativo = false;
+
+        await contexto.SaveChangesAsync();
+
+        #endregion
+        
+        return Ok();
     }
 }
