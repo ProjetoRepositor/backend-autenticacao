@@ -28,6 +28,8 @@ public class Contexto : DbContext
     public DbSet<Login> Login { get; set; } = null!;
     public DbSet<Sessao> Sessao { get; set; } = null!;
     public DbSet<Conta> Conta { get; set; } = null!;
+
+    public DbSet<RecuperacaoSenha> RecuperacaoSenha { get; set; }= null!;
     
     #endregion
 
@@ -47,6 +49,7 @@ public class Contexto : DbContext
         modelBuilder.Entity<Sexo>().ToTable("sexo");
         modelBuilder.Entity<Sessao>().ToTable("sessao");
         modelBuilder.Entity<Conta>().ToView("conta");
+        modelBuilder.Entity<RecuperacaoSenha>().ToTable("recuperacaosenha");
 
         #endregion
         
@@ -81,6 +84,10 @@ public class Contexto : DbContext
         modelBuilder.Entity<Conta>().Property(c => c.Email).HasColumnName("email");
         modelBuilder.Entity<Conta>().Property(c => c.Sexo).HasColumnName("sexo");
         modelBuilder.Entity<Conta>().Property(c => c.Ativo).HasColumnName("ativo");
+
+        modelBuilder.Entity<RecuperacaoSenha>().Property(r => r.Id).HasColumnName("id").IsRequired().UseIdentityColumn();
+        modelBuilder.Entity<RecuperacaoSenha>().Property(r => r.HashRecuperacao).HasColumnName("hashrecuperacao").IsRequired();
+        modelBuilder.Entity<RecuperacaoSenha>().Property(r => r.IdLogin).HasColumnName("fk_idlogin").IsRequired();
         
         #endregion
         

@@ -484,4 +484,99 @@ public class ContaController : ControllerBase
         
         return Ok();
     }
+
+    [HttpPost("SolicitarRecupercaorSenha", Name = "Solicitar Recuperacao Senha")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SolcitarRecuperacaoSenha([FromBody] SolicitarRecuperacaoSenhaRequest request)
+    {
+        
+        #region Buscando email na base
+        
+        await using var contexto = new Contexto();
+
+        var login = await contexto.Login.Where(l => l.Email == request.Email).FirstOrDefaultAsync();
+
+        if (login == null)
+        {
+            return NotFound();
+        }
+
+        #endregion
+
+        #region Insere código de recuperação
+
+        var recuperacaoSenha = new RecuperacaoSenha
+        {
+            HashRecuperacao = Metodos.HashSenha($"{DateTime.UtcNow}:{request.Email}"),
+            IdLogin = login.Id,
+        };
+
+        try
+        {
+            await contexto.RecuperacaoSenha.AddAsync(recuperacaoSenha);
+
+            await contexto.SaveChangesAsync();
+        }
+        catch (Exception e)
+        {
+            _logger.LogCritical($"Ocorreu um erro ao inserir as informações: {e.InnerException.Message}");
+            return Problem($"Ocorreu um erro ao inserir as informações: {e.Message}");
+        }
+
+        #endregion
+
+        return Ok();
+    }
+
+    [HttpPost("RecuperarSenha", Name = "Recuperar Senha"),]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> RecuperarSenha([FromBody] RecuperarSenhaRequest request)
+    {
+        #region Validando senha
+
+        if (!Metodos.ValidaSenha(request.Senha))
+        {
+            return BadRequest("Senha Invalida");
+        }
+            
+        #endregion
+        
+        
+        #region Buscando dados
+
+        await using var contexto = new Contexto();
+
+        var recuperacaoSenha = await contexto.RecuperacaoSenha.Where(r => r.HashRecuperacao == request.HashRecuperacao)
+            .FirstOrDefaultAsync();
+
+        if (recuperacaoSenha == null)
+        {
+            return NotFound();
+        }
+
+        var login = await contexto.Login.Where(l => l.Id == recuperacaoSenha.IdLogin).FirstOrDefaultAsync();
+
+        if (login == null)
+        {
+            return Problem();
+        }
+        
+        #endregion
+
+        #region Atualizando dados
+
+        login.Senha = Metodos.HashSenha(request.Senha);
+
+        await contexto.RecuperacaoSenha.Where(r => r.Id == recuperacaoSenha.Id).ExecuteDeleteAsync();
+
+        await contexto.SaveChangesAsync();
+        
+        #endregion
+        
+        return Ok();
+    }
 }
