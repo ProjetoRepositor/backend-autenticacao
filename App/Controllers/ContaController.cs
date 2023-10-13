@@ -148,17 +148,18 @@ public class ContaController : ControllerBase
         return Ok(resposta);
     }
 
-    [HttpPut("{id:int}", Name = "AlterarConta")]
+    [HttpPut("", Name = "AlterarConta")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> AlterarConta(int id, [FromBody] AtualizarContaRequest request)
+    public async Task<IActionResult> AlterarConta([FromBody] AtualizarContaRequest request, [FromHeader] string authorize)
     {
         #region Normalização de dados
 
         request.Cpf = request.Cpf.Trim();
         request.Nome = request.Nome.Trim();
         request.Email = request.Email.Trim();
+        var token = authorize.Replace("Bearer ", "");
 
         #endregion
 
@@ -210,6 +211,15 @@ public class ContaController : ControllerBase
 
         try
         {
+            var sessao = await contexto.Sessao.Where(s => s.HashSessao == token).FirstOrDefaultAsync();
+
+            if (sessao == null)
+            {
+                return NotFound();
+            }
+
+            var id = sessao.IdUsuario;
+            
             var usuario = await contexto.Usuario.FindAsync(id);
 
             if (usuario == null)
@@ -234,7 +244,7 @@ public class ContaController : ControllerBase
             return Problem($"Ocorreu um erro ao realizar o update no banco de dados: {e.Message}");
         }
         
-        _logger.LogInformation($"Dados atualizados para o id: {id}");
+        _logger.LogInformation($"Dados atualizados para a sessao: {token}");
 
         #endregion
 
